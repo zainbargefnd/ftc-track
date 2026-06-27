@@ -1,0 +1,41 @@
+name: Update FTC Pulse
+
+# When this runs:
+on:
+  workflow_dispatch:          # lets you run it by hand from the Actions tab
+  schedule:
+    - cron: '0 14 * * *'      # every day at 14:00 UTC (about 6-7 AM Pacific)
+
+# Let the action commit the new page back to the repo:
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run the FTC Pulse script
+        run: python ftc_pulse.py
+
+      - name: Commit and push the updated page
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html ftc_pulse_state.json
+          if git diff --staged --quiet; then
+            echo "Nothing changed - no commit needed."
+          else
+            git commit -m "Auto-update FTC Pulse feed"
+            git push
+          fi
